@@ -7,26 +7,29 @@ extern "C" {
 #include <Arduino.h>
 
 int lua_serial_begin(lua_State* L) {
-  int baud = luaL_checkinteger(L, 1);
+  // self = userdata (Serial)
+  // 2-й аргумент — скорость
+  int baud = luaL_checkinteger(L, 2);
   Serial.begin(baud);
   return 0;
 }
 
 int lua_serial_print(lua_State* L) {
-  const char* str = luaL_checkstring(L, 1);
+  const char* str = luaL_checkstring(L, 2);
   Serial.print(str);
   return 0;
 }
 
 int lua_serial_println(lua_State* L) {
-  const char* str = luaL_checkstring(L, 1);
+  const char* str = luaL_checkstring(L, 2);
   Serial.println(str);
   return 0;
 }
 
-int lua_serial_available(lua_State* L) {
-  lua_pushinteger(L, Serial.available());
-  return 1;
+int lua_serial_write(lua_State* L) {
+  const char* str = luaL_checkstring(L, 2);
+  Serial.write(str);
+  return 0;
 }
 
 int lua_serial_read(lua_State* L) {
@@ -39,11 +42,11 @@ int lua_serial_read(lua_State* L) {
   return 1;
 }
 
-int lua_serial_write(lua_State* L) {
-  const char* str = luaL_checkstring(L, 1);
-  Serial.write(str);
-  return 0;
+int lua_serial_available(lua_State* L) {
+  lua_pushinteger(L, Serial.available());
+  return 1;
 }
+
 
 int lua_serial_flush(lua_State* L) {
   Serial.flush();
@@ -101,9 +104,9 @@ int lua_millis(lua_State* L) {
 // ------------------------------
 //      REGISTRATION
 // ------------------------------
-
 void register_serial(lua_State* L) {
-  lua_newtable(L);
+  // Создаём таблицу методов
+  luaL_newmetatable(L, "SerialMeta");
 
   lua_pushcfunction(L, lua_serial_begin);
   lua_setfield(L, -2, "begin");
@@ -126,6 +129,13 @@ void register_serial(lua_State* L) {
   lua_pushcfunction(L, lua_serial_flush);
   lua_setfield(L, -2, "flush");
 
+  // Устанавливаем метатаблицу для объекта
+  lua_pushvalue(L, -1);
+  lua_setfield(L, -2, "__index");
+
+  // Создаём глобальный объект Serial
+  lua_newuserdata(L, 0);
+  luaL_setmetatable(L, "SerialMeta");
   lua_setglobal(L, "Serial");
 }
 

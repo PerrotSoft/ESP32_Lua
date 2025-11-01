@@ -1,6 +1,6 @@
 #include <lua_esp32.h>
 
-void setup() {c:\Users\perro\Downloads\ESP32Lua\ESP32Lua\examples\Lua_Blink.ino
+void setup() {
   setap_lua();
 
   String code = R"(
