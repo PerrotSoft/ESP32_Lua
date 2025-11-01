@@ -20,12 +20,10 @@ void register_esp_lua_api(lua_State* L) {
 // ---------- Пользовательские внешние функции ----------
 void setap_lua(){
     register_esp_lua_api(L);
-    // Инициализируем Lua-стейт (глобально)
-    ensure_lua_initialized();
+    // Инициализируем Lua-стейт (глобально)S
 }
 
 void run_lua(String code){
-    ensure_lua_initialized();
     if (!L) return;
     int status = luaL_loadbuffer(L, code.c_str(), (size_t)code.length(), "user_code");
     if (status != LUA_OK) {
