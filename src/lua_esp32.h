@@ -15,8 +15,7 @@ void register_esp_lua_api(lua_State* L);
 
 // ---------- Регистрация API ----------
 void register_esp_lua_api(lua_State* L) {
-  register_serial(L);
-  register_gpio(L);
+  register_a_lu_esp32(L);
 }
 void add_lua_command(const String& name, lua_CFunction func) {
     lua_register(L, name.c_str(), func);
