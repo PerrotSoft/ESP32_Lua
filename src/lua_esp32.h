@@ -20,6 +20,10 @@ void register_esp_lua_api(lua_State* L) {
 void add_lua_command(const String& name, lua_CFunction func) {
     lua_register(L, name.c_str(), func);
 }
+void add_lua_command_to_class(const String& name,const String& class_name, lua_CFunction func) {
+    lua_register(L, name.c_str(), func);
+    lua_setglobal(L, class_name.c_str());
+}
 // ---------- Инициализация Lua ----------
 void setap_lua() {
   if (L) {

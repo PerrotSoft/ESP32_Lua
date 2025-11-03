@@ -478,16 +478,16 @@ void register_SD(lua_State* L) {
 }
 
 // ---------------------------
-//  SPIFFS / FFFFFS wrapper
+//  SPIFFS / FS wrapper
 // ---------------------------
 
-int lua_FFFFS_begin(lua_State* L) {
+int lua_FS_begin(lua_State* L) {
   bool ok = SPIFFS.begin(true);
   lua_pushboolean(L, ok);
   return 1;
 }
 
-int lua_FFFFS_open(lua_State* L) {
+int lua_FS_open(lua_State* L) {
   const char* path = luaL_checkstring(L, 1);
   const char* mode = luaL_optstring(L, 2, "r");
   File f = SPIFFS.open(path, strcmp(mode, "r")==0 ? FILE_READ : FILE_WRITE);
@@ -497,7 +497,7 @@ int lua_FFFFS_open(lua_State* L) {
   return 1;
 }
 
-int lua_FFFFS_read(lua_State* L) {
+int lua_FS_read(lua_State* L) {
   File* pf = (File*)lua_touserdata(L, 1);
   size_t n = luaL_checkinteger(L, 2);
   if (pf && pf->available()) {
@@ -512,7 +512,7 @@ int lua_FFFFS_read(lua_State* L) {
   return 1;
 }
 
-int lua_FFFFS_write(lua_State* L) {
+int lua_FS_write(lua_State* L) {
   File* pf = (File*)lua_touserdata(L, 1);
   size_t len;
   const char* data = luaL_checklstring(L, 2, &len);
@@ -522,20 +522,20 @@ int lua_FFFFS_write(lua_State* L) {
   return 1;
 }
 
-int lua_FFFFS_close(lua_State* L) {
+int lua_FS_close(lua_State* L) {
   File* pf = (File*)lua_touserdata(L, 1);
   if (pf) { pf->close(); delete pf; }
   return 0;
 }
 
-void register_FFFFS(lua_State* L) {
+void register_FS(lua_State* L) {
   lua_newtable(L);
-  lua_pushcfunction(L, lua_FFFFS_begin); lua_setfield(L, -2, "mount");
-  lua_pushcfunction(L, lua_FFFFS_open); lua_setfield(L, -2, "open");
-  lua_pushcfunction(L, lua_FFFFS_read); lua_setfield(L, -2, "read");
-  lua_pushcfunction(L, lua_FFFFS_write); lua_setfield(L, -2, "write");
-  lua_pushcfunction(L, lua_FFFFS_close); lua_setfield(L, -2, "close");
-  lua_setglobal(L, "FFFFFS");
+  lua_pushcfunction(L, lua_FS_begin); lua_setfield(L, -2, "mount");
+  lua_pushcfunction(L, lua_FS_open); lua_setfield(L, -2, "open");
+  lua_pushcfunction(L, lua_FS_read); lua_setfield(L, -2, "read");
+  lua_pushcfunction(L, lua_FS_write); lua_setfield(L, -2, "write");
+  lua_pushcfunction(L, lua_FS_close); lua_setfield(L, -2, "close");
+  lua_setglobal(L, "FS");
 }
 
 // ---------------------------
@@ -581,6 +581,6 @@ extern "C" void register_a_lu_esp32(lua_State* L) {
   // SD class
   register_SD(L);
 
-  // FFFFS (SPIFFS)
-  register_FFFFS(L);
+  // FS (SPIFFS)
+  register_FS(L);
 }
