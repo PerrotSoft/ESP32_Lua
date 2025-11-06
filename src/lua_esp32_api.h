@@ -541,10 +541,19 @@ void register_FS(lua_State* L) {
 // ---------------------------
 //  Register everything
 // ---------------------------
+void register_constants(lua_State* L) {
+  lua_pushinteger(L, HIGH); lua_setglobal(L, "HIGH");
+  lua_pushinteger(L, LOW); lua_setglobal(L, "LOW");
+  lua_pushinteger(L, INPUT); lua_setglobal(L, "INPUT");
+  lua_pushinteger(L, OUTPUT); lua_setglobal(L, "OUTPUT");
+  lua_pushinteger(L, INPUT_PULLUP); lua_setglobal(L, "INPUT_PULLUP");
+  lua_pushinteger(L, INPUT_PULLDOWN); lua_setglobal(L, "INPUT_PULLDOWN");
+}
 
-extern "C" void register_a_lu_esp32(lua_State* L) {
+
+extern "C" void register_a_lua_esp32(lua_State* L) {
   register_Serial(L);
-
+  Serial.println("[lua_api] Registering...");
   // global Arduino functions
   lua_register(L, "pinMode", lua_pinMode);
   lua_register(L, "digitalWrite", lua_digitalWrite);
@@ -564,7 +573,6 @@ extern "C" void register_a_lu_esp32(lua_State* L) {
   lua_register(L, "max", lua_max);
   lua_register(L, "randomSeed", lua_randomSeed);
   lua_register(L, "random", lua_random);
-
   // bit helpers
   lua_register(L, "bitRead", lua_bitRead);
   lua_register(L, "bitWrite", lua_bitWrite);
@@ -574,7 +582,7 @@ extern "C" void register_a_lu_esp32(lua_State* L) {
   // tone
   lua_register(L, "tone", lua_tone);
   lua_register(L, "noTone", lua_noTone);
-
+  
   // SPI class-like
   register_SPI(L);
 

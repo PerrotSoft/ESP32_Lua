@@ -10,13 +10,21 @@ extern "C" {
 // ---------- Глобальные переменные ----------
 static lua_State* L = nullptr;
 
-// ---------- Forward declarations ----------
-void register_esp_lua_api(lua_State* L);
+void run_lua(String code);
+int run_lua1(lua_State* L) {
+  const char* code = lua_tostring(L, 1);
+  if (code) run_lua(String(code));
+  return 0;
+}
 
 // ---------- Регистрация API ----------
 void register_esp_lua_api(lua_State* L) {
-  register_a_lu_esp32(L);
+  register_a_lua_esp32(L);
+  register_constants(L);
+
+  lua_register(L, "runlua", run_lua1);
 }
+
 void add_lua_command(const String& name, lua_CFunction func) {
     lua_register(L, name.c_str(), func);
 }

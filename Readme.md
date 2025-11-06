@@ -1,215 +1,301 @@
-# 🦜 ESP32-Lua v0.9.0
+# 🦜 **ESP32-Lua — живой мост между Lua и ESP32!**
 
-**ESP32-Lua** — это лёгкая встроенная библиотека для Lua, предоставляющая полный доступ к основным функциям ESP32.  
-Она позволяет работать с пинами, UART, SPI, SD-картой, внутренней файловой системой (FS) и системными функциями напрямую из Lua-скриптов.
-
----
-
-## 📦 Оглавление
-
-1. [Описание модулей](#описание-модулей)
-2. [pin — работа с GPIO](#pin--работа-с-gpio)
-3. [serial — последовательный порт](#serial--последовательный-порт)
-4. [spi — интерфейс SPI](#spi--интерфейс-spi)
-5. [FS — внутренняя файловая система](#FS--внутренняя-файловая-система)
-6. [sd — SD-карта](#sd--sd-карта)
-7. [sys — системные функции](#sys--системные-функции)
-8. [Примеры кода](#примеры-кода)
+> Версия: v0.9.0 | Автор: ParrotSoft
+> Лозунг: *«Пусть твой ESP говорит на Lua!» 🐍⚡*
 
 ---
 
-## 📘 Описание модулей
+## 💬 Что такое Lua?
 
-| Модуль | Назначение |
-|:-------|:------------|
-| `pin` | Управление цифровыми и аналоговыми пинами |
-| `serial` | Работа с UART (Serial) |
-| `spi` | Работа по SPI интерфейсу |
-| `FS` | Работа с внутренней файловой системой во Flash |
-| `sd` | Работа с SD-картой |
-| `sys` | Системные функции: задержки, сброс, время |
+`Lua.h` и `esp32_lua_esp32.cpp` — это твоя “магическая связка”, превращающая ESP32 в мини-компьютер с интерпретатором Lua внутри!
+📖 То есть ты можешь писать скрипты прямо в Lua — а они будут управлять GPIO, Serial, SD-картой, SPIFFS, и всем, что умеет Arduino!
 
 ---
 
-## ⚙️ pin — работа с GPIO
+## 🧩 Общая структура
 
-```lua
-pin.mode(5, "output")
-pin.write(5, 1)
-pin.write(5, 0)
-local state = pin.read(5)
-````
-
-**Функции:**
-
-| Функция                 | Описание                                                     |
-| :---------------------- | :----------------------------------------------------------- |
-| `pin.mode(pin, mode)`   | Устанавливает режим: `"input"`, `"output"`, `"input_pullup"` |
-| `pin.write(pin, value)` | Выставляет уровень `HIGH (1)` или `LOW (0)`                  |
-| `pin.read(pin)`         | Возвращает текущее состояние пина                            |
+| Файл                      | Что делает                                                            |
+| ------------------------- | --------------------------------------------------------------------- |
+| **`luax.h`**              | Реализует базовые функции Lua↔Arduino (GPIO, Serial, SD, FS, и т.п.)  |
+| **`Lua.h`**            | Управляет интерпретатором Lua: создаёт, инициализирует, исполняет код |
+| **`esp32_lua_esp32.cpp`** | Настраивает систему, регистрирует API и добавляет команды             |
 
 ---
 
-## 🖨️ serial — последовательный порт
+## 🚀 Быстрый старт
 
-```lua
-serial.begin(115200)
-serial.println("ESP32-Lua ready!")
-local data = serial.read()
+```cpp
+#include "lua/lua.hpp"
+#include "Lua.h"
+
+void setup() {
+  Serial.begin(115200);
+  setap_lua(); // Запускаем Lua! 🔥
+
+  run_lua(R"(
+    Serial.println("Привет, ESP32 на Lua!")
+    pinMode(2, 1)
+    while true do
+      digitalWrite(2, 1)
+      delay(500)
+      digitalWrite(2, 0)
+      delay(500)
+    end
+  )");
+}
+
+void loop() {}
 ```
 
-**Функции:**
-
-| Функция                | Описание                                    |
-| :--------------------- | :------------------------------------------ |
-| `serial.begin(baud)`   | Инициализирует UART с заданной скоростью    |
-| `serial.print(text)`   | Выводит текст без перевода строки           |
-| `serial.println(text)` | Выводит текст с переводом строки            |
-| `serial.read()`        | Считывает строку, если есть входящие данные |
+👉 После загрузки прошивки ESP начнёт моргать встроенным светодиодом, а в Serial будет писаться Lua-лог!
 
 ---
 
-## 🔄 spi — интерфейс SPI
+## 🧠 Подробно о каждой функции (C++ API)
 
-```lua
-spi.begin(18, 19, 23, 5) -- SCK, MISO, MOSI, CS
-spi.select()
-local id = spi.transfer(0x9F)
-spi.deselect()
+### 🧩 `setap_lua()`
+
+> Создаёт и инициализирует виртуальную машину Lua на ESP32.
+
+**Что делает шаг за шагом:**
+
+1. Если Lua уже запущена — закрывает старую VM.
+2. Создаёт новую VM (`luaL_newstate()`).
+3. Подключает стандартные библиотеки Lua (`luaL_openlibs()`).
+4. Регистрирует весь Arduino API (`register_esp_lua_api()`).
+5. Пишет “Lua initialized successfully!” в Serial.
+
+**Пример:**
+
+```cpp
+void setup() {
+  Serial.begin(115200);
+  setap_lua();
+}
 ```
 
-**Функции:**
-
-| Функция                           | Описание               |
-| :-------------------------------- | :--------------------- |
-| `spi.begin(sck, miso, mosi, cs)`  | Инициализация SPI-шины |
-| `spi.transfer(byte)`              | Отправка и приём байта |
-| `spi.select()` / `spi.deselect()` | Управление CS вручную  |
+🧩 *Теперь ты можешь выполнять любые Lua-команды с помощью `run_lua()`!*
 
 ---
 
-## 📂 FS — внутренняя файловая система (Flash FS)
+### 🧩 `register_esp_lua_api(lua_State* L)`
 
-```lua
-FS.begin()
-local f = FS.open("/info.txt", "w")
-f:write("ESP32-Lua v0.8.9\n")
-f:close()
+> Подключает к Lua всё, что связано с ESP32: GPIO, Serial, SPI, SD, FS и пр.
+
+```cpp
+void register_esp_lua_api(lua_State* L) {
+  register_a_lu_esp32(L); // из luax.h — регистрирует всё Arduino API
+  lua_register(L, "runlua", run_lua1); // добавляет Lua-функцию runlua()
+}
 ```
 
-**Функции:**
-
-| Функция                | Описание                              |
-| :--------------------- | :------------------------------------ |
-| `FS.begin()`          | Монтирует внутреннюю файловую систему |
-| `FS.open(path, mode)` | Открывает файл (`"r"`, `"w"`, `"a"`)  |
-| `FS.remove(path)`     | Удаляет файл                          |
-| `FS.list()`           | Возвращает список файлов              |
-
-**Методы файла:**
-
-| Метод              | Описание                            |
-| :----------------- | :---------------------------------- |
-| `file:write(data)` | Записывает строку                   |
-| `file:read(mode)`  | `"*a"` — весь файл, `"*l"` — строка |
-| `file:close()`     | Закрывает файл                      |
-
----
-
-## 💾 sd — SD-карта
+📘 После этого в Lua появятся:
 
 ```lua
-sd.begin(13, 14, 15, 2) -- SCK, MISO, MOSI, CS
-local f = sd.open("/log.txt", "a")
-f:write("Tick: " .. sys.millis() .. "\n")
-f:close()
+pinMode, digitalWrite, delay, Serial.print, SPI.begin, SD.open, FS.mount, ...
 ```
 
-**Функции:**
-
-| Функция                         | Описание                 |
-| :------------------------------ | :----------------------- |
-| `sd.begin(sck, miso, mosi, cs)` | Инициализирует SD-шину   |
-| `sd.open(path, mode)`           | Открывает файл           |
-| `sd.remove(path)`               | Удаляет файл             |
-| `sd.list()`                     | Возвращает список файлов |
-
-Методы файла аналогичны `FS`.
+🎉 То есть ты можешь написать скрипт на Lua, который выглядит как Arduino-скетч!
 
 ---
 
-## 🧠 sys — системные функции
+### 🧩 `void run_lua(String code)`
 
-```lua
-sys.delay(1000)
-print(sys.millis())
-sys.restart()
+> Выполняет Lua-код, переданный строкой.
+
+```cpp
+run_lua("Serial.println('Lua работает!')");
 ```
 
-**Функции:**
+🔍 **Под капотом:**
 
-| Функция         | Описание                                  |
-| :-------------- | :---------------------------------------- |
-| `sys.delay(ms)` | Задержка в миллисекундах                  |
-| `sys.millis()`  | Возвращает миллисекунды с момента запуска |
-| `sys.restart()` | Перезапускает ESP32                       |
-| `sys.info()`    | Возвращает информацию об устройстве       |
+* Загружает Lua-код в VM (`luaL_loadbuffer`).
+* Проверяет ошибки синтаксиса.
+* Выполняет (`lua_pcall`).
+* В случае ошибки пишет её в Serial.
+
+⚠️ Если Lua не инициализирована — пишет `Lua not initialized!`.
 
 ---
 
-## 💡 Примеры кода
+### 🧩 `void run_lua1(lua_State* L)`
 
-### 🔹 1. Мигание светодиодом
+> То же самое, но вызывается из самой Lua.
 
 ```lua
-pin.mode(2, "output")
+runlua("Serial.println('Привет из Lua внутри Lua!')")
+```
+
+🧠 То есть ты можешь запустить Lua-код прямо из Lua-кода.
+Пример:
+
+```lua
+runlua("pinMode(2,1); digitalWrite(2,1); delay(500); digitalWrite(2,0)")
+```
+
+---
+
+### 🧩 `void add_lua_command(const String& name, lua_CFunction func)`
+
+> Добавляет новую глобальную команду в Lua прямо из C++!
+
+Пример:
+
+```cpp
+add_lua_command("blink3", [](lua_State* L)->int {
+  pinMode(2, 1);
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(2, 1);
+    delay(200);
+    digitalWrite(2, 0);
+    delay(200);
+  }
+  return 0;
+});
+```
+
+Теперь в Lua можно написать:
+
+```lua
+blink3()
+```
+
+✨ И твой пин D2 мигнёт три раза! ✨
+
+---
+
+### 🧩 `void add_lua_command_to_class(...)`
+
+> Добавляет функцию как метод “класса” (например, `System.reboot()`).
+
+Пример:
+
+```cpp
+add_lua_command_to_class("reboot", "System", [](lua_State* L)->int {
+  ESP.restart();
+  return 0;
+});
+```
+
+Теперь в Lua:
+
+```lua
+System.reboot()
+```
+
+📘 Поддерживает логику “объектных” модулей, например:
+
+* `Network.connect()`
+* `Audio.play()`
+* `System.info()`
+
+---
+
+## 🧰 Доступные Lua-функции (из `luax.h`)
+
+| Категория   | Примеры                                                               |
+| ----------- | --------------------------------------------------------------------- |
+| GPIO        | `pinMode`, `digitalWrite`, `digitalRead`, `analogRead`, `analogWrite` |
+| Serial      | `Serial.begin`, `Serial.print`, `Serial.read`, `Serial.available`     |
+| FS (SPIFFS) | `FS.mount`, `FS.open`, `FS.write`, `FS.read`, `FS.close`              |
+| SD          | `SD.begin`, `SD.open`, `SD.read`, `SD.write`, `SD.close`              |
+| SPI         | `SPI.begin`, `SPI.transfer`, `SPI.transferBytes`                      |
+| Математика  | `map`, `constrain`, `abs`, `random`, `randomSeed`                     |
+| Битовые     | `bitRead`, `bitSet`, `bitClear`, `bitWrite`                           |
+| Звук        | `tone(pin,freq,duration)`, `noTone(pin)`                              |
+| Системные   | `delay(ms)`, `delayMicroseconds(us)`, `millis()`, `micros()`          |
+
+---
+
+## 🎮 Примеры Lua-скриптов
+
+### 💡 Моргание светодиодом
+
+```lua
+pinMode(2, 1)
 while true do
-  pin.write(2, 1)
-  sys.delay(500)
-  pin.write(2, 0)
-  sys.delay(500)
+  digitalWrite(2, 1)
+  delay(500)
+  digitalWrite(2, 0)
+  delay(500)
 end
 ```
 
-### 🔹 2. Запись лога во внутреннюю FS
+---
+
+### 🎵 Музыкальный “пик”
 
 ```lua
-FS.begin()
-local f = FS.open("/log.txt", "a")
-f:write("Tick: " .. sys.millis() .. "\n")
-f:close()
+tone(25, 440, 200)
+delay(100)
+tone(25, 880, 200)
+delay(100)
+tone(25, 660, 400)
+noTone(25)
 ```
 
-### 🔹 3. SPI — тестовый обмен
+---
+### 💾 Работа с SPIFFS
 
 ```lua
-spi.begin(18, 19, 23, 5)
-spi.select()
-local id = spi.transfer(0xAA)
-spi.deselect()
-serial.println("SPI returned: " .. id)
-```
-
-### 🔹 4. SD — сохранение данных
-
-```lua
-sd.begin(13, 14, 15, 2)
-local file = sd.open("/data.txt", "w")
-file:write("ESP32-Lua SD OK!\n")
-file:close()
+FS.mount()
+f = FS.open("/test.txt", "w")
+FS.write(f, "Привет, мир!")
+FS.close(f)
 ```
 
 ---
 
-## 🧾 Информация
+### 📟 Serial Debug
 
-* **Название:** 0.9.0
-* **Автор:** ParrotSoft
-* **Платформа:** ESP32
-* **Язык:** Lua
-* **Описание:** Минималистичная Lua-библиотека для прямого доступа к функциям ESP32.
+```lua
+Serial.begin(115200)
+Serial.println("Lua подключена!")
+```
 
 ---
 
+### 🧠 Генератор случайных чисел
 
-© 2025 ParrotSoft. Все права защищены.
+```lua
+randomSeed(micros())
+for i = 1, 5 do
+  Serial.println(random(1, 100))
+  delay(200)
+end
+```
+
+---
+
+### 🕹️ Использование runlua внутри Lua
+
+```lua
+Serial.println("Сейчас моргнём!")
+runlua("pinMode(2,1); digitalWrite(2,1); delay(1000); digitalWrite(2,0)")
+```
+
+---
+
+## ⚖️ Сравнение с другими системами
+
+| Характеристика       | **ESP32-Lua** 😎      | **NodeMCU (Lua RTOS)** 🧱 | **MicroPython** 🐍   |
+| -------------------- | ------------------------ | ------------------------- | -------------------- |
+| Язык исполнения      | Lua 5.4 (стандартный)    | Lua 5.1 (урезанный)       | Python 3.4 subset    |
+| Архитектура          | Lua внутри C++           | Lua — ядро прошивки       | Python интерпретатор |
+| Гибкость             | Можно добавлять свои API | Нельзя                    | Ограничено           |
+| Скорость             | ⚡ Высокая (C++ + Lua)    | Средняя                   | Низкая               |
+| Простота интеграции  | Очень лёгкая             | Требует прошивки          | Отдельный билд       |
+| Использование памяти | 80–200 КБ                | 400+ КБ                   | 1+ МБ                |
+
+---
+
+## 🧾 Заключение
+
+**ESP32-Lua** — это не просто “встраиваемый Lua”, а полноценная *скриптовая среда для твоей прошивки*!
+🦜 Простая, весёлая и гибкая:
+
+* пиши на Lua,
+* управляй железом,
+* добавляй свои команды,
+* живи без прошивок и сборок каждый раз.
+
